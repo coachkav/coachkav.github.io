@@ -43,7 +43,5 @@ GUESS=$(( $GUESS + 1 ))
 done
 
 echo "You guessed it in $GUESS tries. The secret number was $RANDOM_NUMBER. Nice job!"
-
-
-USER_ID=$($PSQL "SELECT user_id FROM users WHERE username='$USERNAME'")
-INSERT_GAME=$($PSQL "INSERT INTO games(number_guess, user_id) VALUES($GUESS, $USER_ID)")
+USER=$($PSQL "SELECT user_id FROM users WHERE username='$USERNAME'")
+INSERT_G=$($PSQL "INSERT INTO games(number_guess, user_id) VALUES($GUESS, $USER)")
