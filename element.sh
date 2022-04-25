@@ -2,44 +2,23 @@
 
 PSQL="psql -X --username=freecodecamp --dbname=periodic_table --tuples-only -c"
 
-NO_ELEMENT() {
-  echo "I could not find that element in the database."
-}
-ATOM_DETAIL(){
-  echo $($PSQL "SELECT atomic_number, name, symbol, type, atomic_mass, melting_point_celsius, boiling_point_celsius FROM elements INNER JOIN properties USING (atomic_number) INNER JOIN types USING(type_ID) WHERE $1='$2';") 
-}
-
-PRINT_RESULT(){
-  if [[ ! -z $1 ]]
-  then
-    echo "The element with atomic number $1 is $2 ($3). It's a $4, with a mass of $5 amu. $2 has a melting point of $6 celsius and a boiling point of $7 celsius."
-  else
-    NO_ELEMENT
-  fi
-}
-
-if [[ ! $1 ]]
+if [[ $1 ]]
 then
-  echo Please provide an element as an argument.
-  exit
+if [[ ! $1 =~ ^[0-9]+$ ]]
+then
+ELEMENT=$($PSQL "SELECT atomic_number, atomic_mass, melting_point_celsius, boiling_point_celsius, symbol, name, type FROM properties JOIN elements USING(atomic_number) JOIN types USING(type_id) WHERE elements.name LIKE '$1%' ORDER BY atomic_number LIMIT 1")
+else
+ELEMENT=$($PSQL "SELECT atomic_number, atomic_mass, melting_point_celsius, boiling_point_celsius, symbol, name, type FROM properties JOIN elements USING(atomic_number) JOIN types USING(type_id) WHERE elements.atomic_number=$1")
 fi
-
-if [[ $1 =~ ^[0-9]+$ ]]
+if [[ -z $ELEMENT ]]
 then
-  #argument is number, find element by atomic_number
-  ATOM_RESULT=$(ATOM_DETAIL atomic_number $1)
-elif [[ $1 =~ ^[a-zA-Z]+$ ]]
-then
-  if [[ ${#1} -le 2 ]]
-  then
-    ATOM_RESULT=$(ATOM_DETAIL symbol $1)
-  else
-    ATOM_RESULT=$(ATOM_DETAIL name $1)
-  fi
-fi
-
-# print the result
-echo $ATOM_RESULT | while read ATOMIC_NUMBER BAR NAME BAR SYMBOL BAR TYPE BAR ATOMIC_MASS BAR MELTING BAR BOILING
+echo "I could not find that element in the database."
+else
+echo $ELEMENT | while IFS=\| read ATOMIC_NUMBER ATOMIC_MASS MELTING BOILING SYMBOL NAME TYPE
 do
-  PRINT_RESULT $ATOMIC_NUMBER $NAME $SYMBOL $TYPE $ATOMIC_MASS $MELTING $BOILING
+echo "The element with atomic number $ATOMIC_NUMBER is $NAME ($SYMBOL). It's a $TYPE, with a mass of $ATOMIC_MASS amu. $NAME has a melting point of $MELTING celsius and a boiling point of $BOILING celsius." 
 done
+fi
+else
+echo "Please provide an element as an argument."
+fi
